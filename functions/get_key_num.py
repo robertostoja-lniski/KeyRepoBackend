@@ -1,10 +1,13 @@
-from flask import jsonify, request
+from flask import jsonify, request, Flask
 from flask_restful import Resource
 from integration.syscall_lib_loader import get_repo_interface
 from time import time
 import ctypes
 from jwt_utils.jwt_helper import get_from_jwt
+import logging
 
+app = Flask(__name__)
+app.logger.setLevel(logging.INFO)
 
 class GetKeyNum(Resource):
 
@@ -16,19 +19,16 @@ class GetKeyNum(Resource):
 
     def _handle_get_key_num(self):
 
-        jwt_token = request.args.get('protected_data')
+        app.logger.info('Starting handle get key num')
 
         try:
-            system_pass = get_from_jwt(jwt_token, 'my-secret', 'system_pass')
-
-        except Exception:
+            jwt_token = request.args.get('protected_data')
+            system_pass = get_from_jwt(jwt_token, 'system_pass')
+        except ValueError:
             return jsonify({'function': 'get_key_num',
-                           'result': 404, 'description': 'wrong params'})
+                            'result': 404, 'description': 'wrong params'})
 
-
-        print(f'Reading data from repo')
-        print(f'system pass {system_pass}')
-
+        print(f'System pass is {system_pass}')
         result = -1
         try:
             interface = get_repo_interface()

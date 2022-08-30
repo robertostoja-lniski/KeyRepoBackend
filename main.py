@@ -1,4 +1,4 @@
-from utils.config_parser import arg
+# from utils.config_parser import arg
 from functions.backend import backend_run
 
 if __name__ == '__main__':

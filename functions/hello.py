@@ -3,7 +3,7 @@ from flask_restful import Resource, Api
 
 class HelloWorld(Resource):
     def get(self):
-        return {'about': 'Hello Worrrrrld!'}
+        return {'about': 'Welcome to key repo backend!'}
 
     def post(self):
         some_json = request.get_json()

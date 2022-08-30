@@ -3,9 +3,11 @@ from flask_restful import Resource, Api
 from functions.hello import HelloWorld
 from functions.get_key_num import GetKeyNum
 from flask_cors import CORS, cross_origin
+import logging
 
 app = Flask(__name__)
 app.config['JSON_SORT_KEYS'] = False
+app.logger.setLevel(logging.DEBUG)
 cors = CORS(app, resources={r"/getKeyNum/*": {"origins": "*"}})
 api = Api(app)
 
