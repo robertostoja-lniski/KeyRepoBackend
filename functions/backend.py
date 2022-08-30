@@ -3,6 +3,7 @@ from flask_restful import Resource, Api
 from functions.hello import HelloWorld
 from functions.get_key_num import GetKeyNum
 from functions.get_key_mode import GetKeyMode
+from functions.set_key_mode import SetKeyMode
 from flask_cors import CORS, cross_origin
 import logging
 
@@ -26,6 +27,7 @@ def init():
     api.add_resource(HelloWorld, '/')
     api.add_resource(GetKeyNum, '/getKeyNum')
     api.add_resource(GetKeyMode, '/getKeyMode')
+    api.add_resource(SetKeyMode, '/setKeyMode')
 
 
 def backend_run():
