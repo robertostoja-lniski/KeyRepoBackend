@@ -2,13 +2,14 @@ from flask import Flask, request, make_response
 from flask_restful import Resource, Api
 from functions.hello import HelloWorld
 from functions.get_key_num import GetKeyNum
+from functions.get_key_mode import GetKeyMode
 from flask_cors import CORS, cross_origin
 import logging
 
 app = Flask(__name__)
 app.config['JSON_SORT_KEYS'] = False
 app.logger.setLevel(logging.DEBUG)
-cors = CORS(app, resources={r"/getKeyNum/*": {"origins": "*"}})
+cors = CORS(app, resources={r"/*": {"origins": "*"}})
 api = Api(app)
 
 
@@ -24,6 +25,7 @@ def login():
 def init():
     api.add_resource(HelloWorld, '/')
     api.add_resource(GetKeyNum, '/getKeyNum')
+    api.add_resource(GetKeyMode, '/getKeyMode')
 
 
 def backend_run():
