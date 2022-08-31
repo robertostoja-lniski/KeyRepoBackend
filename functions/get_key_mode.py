@@ -4,6 +4,7 @@ from integration.syscall_lib_loader import get_repo_interface
 from time import time
 import ctypes
 from jwt_utils.jwt_helper import get_from_jwt
+from utils import key_reader
 import logging
 
 app = Flask(__name__)
@@ -24,8 +25,8 @@ class GetKeyMode(Resource):
 
         try:
             jwt_token = request.args.get('protected_data')
-            key_id = get_from_jwt(jwt_token, 'key_id')
-            app.logger.info(f'Received key_id: {key_id}')
+            key_path = get_from_jwt(jwt_token, 'key_path')
+            app.logger.info(f'Received key_path: {key_path}')
         except ValueError:
             return jsonify({'function': 'get_key_mode',
                             'result': 404, 'description': 'wrong params'})
@@ -34,7 +35,7 @@ class GetKeyMode(Resource):
         try:
             interface = get_repo_interface()
             modes = ctypes.c_int()
-            uint64_key_id = ctypes.c_uint64(int(key_id))
+            uint64_key_id = key_reader.read_prv_key_id(key_path)
             app.logger.info(f'Converted to uint64 key_id is {uint64_key_id}')
 
             start = time()
