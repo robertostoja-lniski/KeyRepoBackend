@@ -17,3 +17,15 @@ def read_prv_key_id(path):
 
     return ctypes.c_uint64(int(key_id[0]))
 
+
+def read_file(path):
+    with open(path) as f:
+        lines = f.readlines()
+        buf = ''
+        for line in lines:
+            buf += line
+
+        return buf
+
+
+
