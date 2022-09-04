@@ -8,6 +8,7 @@ from functions.remove_key import RemoveKey
 from functions.create_key import CreateKey
 from functions.read_key import ReadKey
 from functions.encrypt import Encrypt
+from functions.decrypt import Decrypt
 from flask_cors import CORS, cross_origin
 import logging
 
@@ -36,6 +37,7 @@ def init():
     api.add_resource(CreateKey, '/createKeys')
     api.add_resource(ReadKey, '/readKey')
     api.add_resource(Encrypt, '/encrypt')
+    api.add_resource(Decrypt, '/decrypt')
 
 
 def backend_run():

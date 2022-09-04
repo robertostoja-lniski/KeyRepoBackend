@@ -18,6 +18,11 @@ def read_prv_key_id(path):
     return ctypes.c_uint64(int(key_id[0]))
 
 
+def read_buf_file(path):
+    with open(path, "rb") as f:
+        return f.read()
+
+
 def read_file(path):
     with open(path) as f:
         lines = f.readlines()
