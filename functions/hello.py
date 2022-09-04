@@ -1,10 +1,25 @@
-from flask import Flask, request
-from flask_restful import Resource, Api
+from flask import jsonify, request, Flask
+from flask_restful import Resource
+from integration.syscall_lib_loader import get_repo_interface
+from time import time
+import ctypes
+from jwt_utils.jwt_helper import get_from_jwt
+import logging
 
-class HelloWorld(Resource):
+app = Flask(__name__)
+app.logger.setLevel(logging.INFO)
+
+
+class SendWelcomeMessage(Resource):
+
     def get(self):
-        return {'about': 'Welcome to key repo backend!'}
+        return self._handle_send_welcome_message()
 
     def post(self):
-        some_json = request.get_json()
-        return {'you sent': some_json}, 201
+        return self._handle_send_welcome_message()
+
+    def _handle_send_welcome_message(self):
+
+        app.logger.info('Starting handle get key num')
+        return jsonify({'function': 'send_welcome_message',
+                        'description': 'Welcome to Qrepo!'})
