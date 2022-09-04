@@ -108,7 +108,7 @@ class CreateKey(Resource):
             app.logger.info(f'Create key ret is: {ret}')
 
             with open(key_path, 'w') as fp:
-                fp.write(prv_key.decode())
+                fp.write(str(key_id.value))
 
             with open(pub_key_path, 'w') as fp:
                 fp.write(pub_key.decode())
@@ -118,6 +118,12 @@ class CreateKey(Resource):
             return jsonify({'function': 'create_keys',
                             'result': 404,
                             'description': 'File already exists'})
+
+        if ret != 0:
+            app.logger.error(f'Flow finished. Operation NOT successfully completed!')
+            return jsonify({'function': 'create_keys',
+                            'result': ret,
+                            'description': 'Error found'})
 
         app.logger.info(f'Flow finished. Operation successfully completed!')
         return jsonify({'function': 'create_keys',

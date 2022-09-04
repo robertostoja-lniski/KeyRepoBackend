@@ -6,6 +6,7 @@ from functions.get_key_mode import GetKeyMode
 from functions.set_key_mode import SetKeyMode
 from functions.remove_key import RemoveKey
 from functions.create_key import CreateKey
+from functions.read_key import ReadKey
 from flask_cors import CORS, cross_origin
 import logging
 
@@ -32,6 +33,7 @@ def init():
     api.add_resource(SetKeyMode, '/setKeyMode')
     api.add_resource(RemoveKey, '/removeKey')
     api.add_resource(CreateKey, '/createKeys')
+    api.add_resource(ReadKey, '/readKey')
 
 
 def backend_run():
