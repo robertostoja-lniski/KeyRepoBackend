@@ -10,6 +10,7 @@ from functions.read_key import ReadKey
 from functions.encrypt import Encrypt
 from functions.decrypt import Decrypt
 from functions.sign import Sign
+from functions.check_signature import CheckSignature
 from flask_cors import CORS, cross_origin
 import logging
 
@@ -40,6 +41,7 @@ def init():
     api.add_resource(Encrypt, '/encrypt')
     api.add_resource(Decrypt, '/decrypt')
     api.add_resource(Sign, '/sign')
+    api.add_resource(CheckSignature, '/checkSignature')
 
 
 def backend_run():
