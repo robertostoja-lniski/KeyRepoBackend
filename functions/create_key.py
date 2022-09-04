@@ -83,10 +83,12 @@ class CreateKey(Resource):
             encryption_algorithm=serialization.NoEncryption()
         )
 
-        pub_key = pem_public_key = prv_key_gen.public_key().public_bytes(
+        pub_key = prv_key_gen.public_key().public_bytes(
           encoding=serialization.Encoding.PEM,
           format=serialization.PublicFormat.SubjectPublicKeyInfo
         )
+
+        app.logger.info(f'Key is: {prv_key}')
 
         try:
 
@@ -104,7 +106,7 @@ class CreateKey(Resource):
             key_id = ctypes.c_uint64()
             key_id_ref = ctypes.byref(key_id)
 
-            ret = interface.write_key(prv_key_ptr, private_key_len, pass_ptr, pass_len, key_id_ref, 1)
+            ret = interface.write_key(prv_key_ptr, private_key_len, pass_ptr, pass_len, key_id_ref, 0)
             app.logger.info(f'Create key ret is: {ret}')
 
             with open(key_path, 'w') as fp:
