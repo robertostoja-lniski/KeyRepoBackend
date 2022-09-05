@@ -21,15 +21,6 @@ cors = CORS(app, resources={r"/*": {"origins": "*"}})
 api = Api(app)
 
 
-@app.route('/login')
-def login():
-    auth = request.authorization
-    if auth and auth.password == "password":
-        return ''
-
-    return make_response('Could verify!', 401, {'WWW-Authenticate': 'Basic realm="Login Required"'})
-
-
 def init():
     api.add_resource(SendWelcomeMessage, '/')
     api.add_resource(GetKeyNum, '/getKeyNum')
