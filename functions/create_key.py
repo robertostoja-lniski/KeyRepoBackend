@@ -41,7 +41,8 @@ class CreateKey(Resource):
             pub_key_path = get_from_jwt(jwt_token, 'pub_key_path')
             app.logger.info(f'Received public key path: {pub_key_path}')
 
-            password = get_from_jwt(jwt_token, 'pass')
+            password = get_from_jwt(jwt_token, 'partition_pass')
+            system_pass = get_from_jwt(jwt_token, 'system_pass')
 
             algo = request.args.get('algo')
             app.logger.info(f'Received algo: {algo}')
@@ -58,17 +59,22 @@ class CreateKey(Resource):
         except AlgorithmNotSupportedError as e:
             app.logger.error(f'Exception caught {e}')
             return jsonify({'function': 'create_keys',
-                            'result': 404, 'description': 'Use algo=RSA'})
+                            'qrepo_code': None,
+                            'result': 'failed',
+                            'description': 'Use algo=RSA'})
 
         except NonNumericKenLen as e:
             app.logger.error(f'Exception caught {e}')
             return jsonify({'function': 'create_keys',
-                            'result': 404, 'description': 'No param key_len'})
+                            'qrepo_code': None,
+                            'result': 'failed',
+                            'description': 'No param key_len'})
 
         except Exception as e:
             app.logger.error(f'Exception found for create key {e}')
             return jsonify({'function': 'create_keys',
-                            'result': 404,
+                            'result': 'failed',
+                            'qrepo_code': None,
                             'description': 'wrong params.'})
 
         prv_key_gen = rsa.generate_private_key(
@@ -118,16 +124,19 @@ class CreateKey(Resource):
         except FileExistsError as e:
             app.logger.error(f'File already exists: {e}')
             return jsonify({'function': 'create_keys',
-                            'result': 404,
+                            'result': 'failed',
+                            'qrepo_code': None,
                             'description': 'File already exists'})
 
         if ret != 0:
             app.logger.error(f'Flow finished. Operation NOT successfully completed!')
             return jsonify({'function': 'create_keys',
-                            'result': ret,
+                            'result': 'failed',
+                            'qrepo_code': res,
                             'description': 'Error found'})
 
         app.logger.info(f'Flow finished. Operation successfully completed!')
         return jsonify({'function': 'create_keys',
-                        'result': 200,
+                        'result': 'success',
+                        'qrepo_code': 0,
                         'description': 'Keys created, prv key written to partition!'})
