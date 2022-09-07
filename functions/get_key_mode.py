@@ -29,7 +29,8 @@ class GetKeyMode(Resource):
             app.logger.info(f'Received key_path: {key_path}')
         except ValueError:
             return jsonify({'function': 'get_key_mode',
-                            'result': 404, 'description': 'wrong params'})
+                            'result': 'failed',
+                            'description': 'wrong params'})
 
         result = -1
         try:
@@ -46,11 +47,12 @@ class GetKeyMode(Resource):
 
         except Exception as e:
             app.logger.error(f'[GetKeyMode]: exception caught {e}')
-            return jsonify({'function': 'get_mode'},
-                           {'result': result})
+            return jsonify({'function': 'get_mode',
+                           'qrepo_result': result,
+                           'result': 'failed'})
 
         return jsonify({'function': 'get_mode',
                         'modes': modes.value,
                         'key_repo_res': result,
-                        'result': 200,
+                        'result': 'success',
                         'elapsed_time': elapsed_time})
