@@ -48,7 +48,8 @@ class ReadKey(Resource):
                 export_key_path = get_from_jwt(jwt_token, 'export_key_path')
                 app.logger.info(f'Received export key path: {export_key_path}')
 
-            password = get_from_jwt(jwt_token, 'system_pass')
+            password = get_from_jwt(jwt_token, 'partition_pass')
+            system_password = get_from_jwt(jwt_token, 'system_pass')
 
         except Exception as e:
             app.logger.error(f'Exception found for read key {e}')
@@ -82,7 +83,6 @@ class ReadKey(Resource):
         if result != 0:
             app.logger.error(f'Error in Qrepo: {result}')
             return jsonify({'function': 'read key',
-                            'result_get_key_size': -1,
                             'result': 'failed',
                             'qrepo_code': None,
                             'description': 'Cannot get key size'})

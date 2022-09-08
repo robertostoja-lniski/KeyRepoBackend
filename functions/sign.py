@@ -11,7 +11,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 import ctypes
-from jwt_utils.jwt_helper import get_from_jwt
+from jwt_utils.jwt_helper import get_from_jwt, get_key_from_jwt
 from utils import key_reader
 import logging
 
@@ -33,8 +33,14 @@ class Sign(Resource):
 
         try:
             jwt_token = request.args.get('protected_data')
-            key_path = get_from_jwt(jwt_token, 'key_path')
-            app.logger.info(f'Received key path: {key_path}')
+            # Support for frontend requirement.
+            # Not recommended for CLI usage
+            key_id = get_key_from_jwt(jwt_token)
+            if key_id:
+                app.logger.info(f'Received key_id: {key_id}')
+            else:
+                key_path = get_from_jwt(jwt_token, 'key_path')
+                app.logger.info(f'Received key_path: {key_path}')
 
             message = get_from_jwt(jwt_token, 'plain_file')
             app.logger.info(f'Received message file path: {message}')
@@ -42,18 +48,25 @@ class Sign(Resource):
             output = get_from_jwt(jwt_token, 'signature')
             app.logger.info(f'Received signature file path: {output}')
 
-            password = get_from_jwt(jwt_token, 'pass')
+            password = get_from_jwt(jwt_token, 'partition_pass')
+            system_pass = get_from_jwt(jwt_token, 'system_pass')
 
         except Exception as e:
             app.logger.error(f'Exception found for sign {e}')
             return jsonify({'function': 'sign',
-                            'result': 404,
+                            'result': 'failed',
+                            'qrepo_code': None,
                             'description': 'wrong params.'})
 
         # temporary step - get key size
         try:
             interface = get_repo_interface()
-            uint64_key_id = key_reader.read_prv_key_id(key_path)
+
+            if key_id:
+                uint64_key_id = ctypes.c_uint64(int(key_id))
+            else:
+                uint64_key_id = key_reader.read_prv_key_id(key_path)
+            
             app.logger.info(f'Converted to uint64 key_id is {uint64_key_id}')
 
             uint64_key_len = ctypes.c_uint64()
@@ -65,14 +78,15 @@ class Sign(Resource):
         except Exception as e:
             app.logger.error(f'Exception for read key: {e}')
             return jsonify({'function': 'read key',
-                            'result': 500,
+                            'result': 'failed',
+                            'qrepo_code': None,
                             'description': 'Cannot get key size'})
 
         if result != 0:
             app.logger.error(f'Error in Qrepo: {result}')
             return jsonify({'function': 'sign',
-                            'result_sign': -1,
-                            'result': 500,
+                            'qrepo_code': None,
+                            'result': 'failed',
                             'description': 'Cannot get key size'})
 
         try:
@@ -80,8 +94,9 @@ class Sign(Resource):
             app.logger.info(f'Password key len is: {pass_len} to partition')
             pass_ptr = ctypes.c_char_p(password.encode())
 
-            buf = '_' * uint64_key_len.value
-            prv_key = ctypes.c_char_p(buf.encode())
+            prv_key = ctypes.c_char_p(bytes(bytearray(uint64_key_len.value)))
+
+            app.logger.info(f'{prv_key.value}')
 
             app.logger.info(f'prv_key {prv_key}, key_id {uint64_key_id}, pass_ptr {pass_ptr}, pass_len {pass_len}, uint64_key_len {uint64_key_len}')
 
@@ -89,17 +104,18 @@ class Sign(Resource):
             if ret != 0:
                 app.logger.error(f'Flow finished. Operation NOT successfully completed!')
                 return jsonify({'function': 'sign',
-                                'result': ret,
+                                'qrepo_code': ret,
+                                'result': 'failed',
                                 'description': 'Error found'})
 
         except Exception as e:
             app.logger.error(f'Unhandled error: {e}')
             return jsonify({'function': 'sign',
-                            'result': 500,
+                            'result': 'failed',
+                            'qrepo_code': None,
                             'description': 'Internal server error'})
 
         str_prv_key = str(prv_key.value)
-        app.logger.info(f'Key value: {str(prv_key.value)}')
 
         try:
             # create key structure from buffer
@@ -110,12 +126,13 @@ class Sign(Resource):
         except Exception as e:
             app.logger.error(f'Error when loading cert: {e}')
             return jsonify({'function': 'sign',
-                            'result': 500,
+                            'result': 'failed',
                             'description': 'Cannot load pem prv key'})
 
 
         try:
             message_val = key_reader.read_buf_file(message)
+            app.logger.info(f'Secret --- now not secret anymore ;) --- message is {message_val}')
             signature = prv_key_wrapper.sign(
                 message_val,
                 padding.PSS(
@@ -133,10 +150,12 @@ class Sign(Resource):
         except Exception as e:
             app.logger.error(f'Unhandled error: {e}')
             return jsonify({'function': 'sign',
-                            'result': 500,
+                            'result': 'failed',
+                            'qrepo_code': ret,
                             'description': 'Error while signing process'})
 
         app.logger.info(f'Flow finished. Operation successfully completed!')
         return jsonify({'function': 'sign',
-                        'result': 200,
+                        'result': 'success',
+                        'qrepo_code': 0,
                         'description': 'Encryption finished!'})
