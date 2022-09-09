@@ -43,12 +43,13 @@ class CheckSignature(Resource):
             input = get_from_jwt(jwt_token, 'signature')
             app.logger.info(f'Received signature file path: {input}')
 
-            password = get_from_jwt(jwt_token, 'pass')
+            password = get_from_jwt(jwt_token, 'partition_pass')
 
         except Exception as e:
             app.logger.error(f'Exception found for sign {e}')
             return jsonify({'function': 'sign',
-                            'result': 404,
+                            'result': 'failed',
+                            'qrepo_code': None,
                             'description': 'wrong params.'})
 
         try:
@@ -63,7 +64,8 @@ class CheckSignature(Resource):
         except Exception as e:
             app.logger.error(f'Error when loading cert: {e}')
             return jsonify({'function': 'check_signature',
-                            'result': 500,
+                            'result': 'failed',
+                            'qrepo_code': None,
                             'description': 'Cannot load pub key'})
 
         result = 'OK'
@@ -92,12 +94,13 @@ class CheckSignature(Resource):
 
         except Exception as e:
             app.logger.error(f'Unhandled error: {e}')
-            return jsonify({'function': 'sign',
-                            'result': 500,
+            return jsonify({'function': 'check_signature',
+                            'result': 'failed',
+                            'qrepo_code': None,
                             'description': 'Error while check signature process'})
 
         app.logger.info(f'Flow finished. Operation successfully completed!')
-        return jsonify({'function': 'sign',
-                        'check_result': result,
-                        'result': 200,
+        return jsonify({'function': 'check_signature',
+                        'result': 'success',
+                        'qrepo_code': result,
                         'description': 'Encryption finished!'})
