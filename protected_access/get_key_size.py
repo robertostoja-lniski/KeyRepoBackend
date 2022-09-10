@@ -17,8 +17,10 @@ def main():
         uid = ctypes.c_int(msg['uid'])
         gid = ctypes.c_int(msg['gid'])
 
+        key_size = ctypes.c_uint64()
+
         interface = get_repo_interface()
-        result = interface.remove_key_uid(key_id, uid, gid)
+        result = interface.get_key_size_uid(key_id, ctypes.byref(key_size), uid, gid)
 
     except Exception as e:
         msg['exception'] = str(e)
@@ -27,6 +29,7 @@ def main():
         return
 
     msg['res_result'] = result
+    msg['res_key_size'] = key_size.value
     io_handler.to_secret_file(msg)
 
 if __name__ == '__main__':

@@ -25,21 +25,22 @@ def main():
         uid = int(msg['uid'])
         gid = int(msg['gid'])
 
-        key_id = ctypes.c_uint64()
-        key_id_ref = ctypes.byref(key_id)
+        key_id = ctypes.c_uint64(msg['key_id'])
 
-        interface = get_repo_interface()
-        result = interface.read_key_uid(prv_key_ptr, prv_key_len, pass_ptr, password_len, key_id_ref, 0, uid, gid)
+        interface = get_repo_interface()        
+        result = interface.read_key_uid(prv_key_ptr, key_id, pass_ptr, password_len, prv_key_len, uid, gid)
+
+        msg['res_result'] = result
+        msg['res_key'] = str(prv_key_ptr.value)
+        io_handler.to_secret_file(msg)
 
     except Exception as e:
         msg['exception'] = str(e)
-        msg['res_result'] = result
+        msg['res_result'] = None
         io_handler.to_secret_file(msg)
         return
 
-    msg['res_result'] = result
-    msg['res_key_id'] = str(key_id.value)
-    io_handler.to_secret_file(msg)
+    
 
 if __name__ == '__main__':
     main()
