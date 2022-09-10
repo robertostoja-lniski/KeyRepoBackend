@@ -1,8 +1,11 @@
 from flask import jsonify, request, Flask
 from flask_restful import Resource
 from integration.syscall_lib_loader import get_repo_interface
+from protected_access.helpers import io_handler
 from time import time
+from subprocess import call
 from os import chmod
+import os
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
@@ -98,28 +101,32 @@ class CreateKey(Resource):
 
         try:
 
-            interface = get_repo_interface()
-            private_key_len = len(prv_key)
-            app.logger.info(f'Writing key of len: {private_key_len} to partition')
+            app.logger.info(f'Writing key of len: {len(prv_key)} to partition')
+            app.logger.info(f'Password key len is: {len(password)} to partition')
 
-            pass_len = len(password)
-            app.logger.info(f'Password key len is: {pass_len} to partition')
+            msg = {}
+            msg['prv_key'] = prv_key.decode()
+            msg['password'] = password
+            msg['uid'] = os.getuid()
+            msg['gid'] = os.getgid()
+            io_handler.to_secret_file(msg)
 
-            # prv_key is already a byte array - no need to convert
-            prv_key_ptr = ctypes.c_char_p(prv_key)
-            pass_ptr = ctypes.c_char_p(password.encode())
+            app.logger.info(f'Running sudo')
+            cmd = "python3 -m protected_access.create_key"
+            call('echo {} | sudo -S {}'.format(system_pass, cmd), shell=True)
+            app.logger.info(f'Runned sudo')
 
-            key_id = ctypes.c_uint64()
-            key_id_ref = ctypes.byref(key_id)
+            result_msg = io_handler.from_secret_file()
+            app.logger.info(f'Got result from partition {result_msg}')
 
-            ret = interface.write_key(prv_key_ptr, private_key_len, pass_ptr, pass_len, key_id_ref, 0)
-            app.logger.info(f'Create key ret is: {ret}')
-
-            with open(key_path, 'w') as fp:
-                fp.write(str(key_id.value))
+            if result_msg['res_result'] is None:
+                raise Exception(result_msg['exception'])
 
             with open(pub_key_path, 'w') as fp:
                 fp.write(pub_key.decode())
+
+            with open(key_path, 'w') as fp:
+                fp.write(result_msg['res_key_id'])
 
         except FileExistsError as e:
             app.logger.error(f'File already exists: {e}')
@@ -128,11 +135,11 @@ class CreateKey(Resource):
                             'qrepo_code': None,
                             'description': 'File already exists'})
 
-        if ret != 0:
+        if result_msg['res_result'] != 0:
             app.logger.error(f'Flow finished. Operation NOT successfully completed!')
             return jsonify({'function': 'create_keys',
                             'result': 'failed',
-                            'qrepo_code': res,
+                            'qrepo_code': result_msg['res_result'],
                             'description': 'Error found'})
 
         app.logger.info(f'Flow finished. Operation successfully completed!')

@@ -1,10 +1,15 @@
 from flask import jsonify, request, Flask
 from flask_restful import Resource
+from subprocess import call
 from integration.syscall_lib_loader import get_repo_interface
+from protected_access.helpers import io_handler
 from time import time
+import json
 import ctypes
+import os
 from jwt_utils.jwt_helper import get_jwt_token, get_from_jwt, NoProtectedDataError, get_key_from_jwt
 from utils import key_reader
+from protected_access.helpers.io_handler import to_secret_file
 import logging
 import subprocess
 
@@ -47,28 +52,37 @@ class RemoveKey(Resource):
 
         result = None
         try:
-            interface = get_repo_interface()
 
             if key_id:
-                uint64_key_id = ctypes.c_uint64(int(key_id))
+                int_key_id = int(key_id)
             else:
-                uint64_key_id = key_reader.read_prv_key_id(key_path)
+                int_key_id = key_reader.read_prv_key_id_int(key_path)
 
-            app.logger.info(f'Converted to key_id is {uint64_key_id}')
+            app.logger.info(f'Converted to key_id is {int_key_id}')
 
-            start = time()
-            result = interface.remove_key(uint64_key_id)
-            end = time()
+            msg = {}
+            msg['key_id'] = int_key_id
+            msg['uid'] = os.getuid()
+            msg['gid'] = os.getgid()
+            io_handler.to_secret_file(msg)
 
-            elapsed_time = (end - start) * 1000
+            app.logger.info(f'Running sudo')
+            cmd = "python3 -m protected_access.remove_key"
+            call('echo {} | sudo -S {}'.format(system_pass, cmd), shell=True)
+            app.logger.info(f'Runned sudo')
+
+            result_msg = io_handler.from_secret_file()
+            app.logger.info(f'Got result from partition {result_msg}')
+
+            if result_msg['res_result'] is None:
+                raise Exception(result_msg['exception'])
 
         except Exception as e:
             app.logger.error(f'[RemoveKey]: exception caught {e}')
-            return jsonify({'function': 'remove_key'},
-                           {'result': 'failed'},
-                           {'qrepo_code': result})
+            return jsonify({'function': 'remove_key',
+                            'result': 'failed',
+                            'qrepo_code': None})
 
         return jsonify({'function': 'remove_key',
-                        'qrepo_code': result,
-                        'result': 'success',
-                        'elapsed_time': elapsed_time})
+                        'qrepo_code': result_msg['res_result'],
+                        'result': 'success'})
