@@ -31,7 +31,7 @@ def main():
         result = interface.read_key_uid(prv_key_ptr, key_id, pass_ptr, password_len, prv_key_len, uid, gid)
 
         msg['res_result'] = result
-        msg['res_key'] = str(prv_key_ptr.value)
+        msg['res_key'] = prv_key_ptr.value.decode()
         io_handler.to_secret_file(msg)
 
     except Exception as e:

@@ -1,8 +1,11 @@
 from flask import jsonify, request, Flask
 from flask_restful import Resource
 from integration.syscall_lib_loader import get_repo_interface
+from protected_access.helpers import io_handler
 from time import time
 from os import chmod
+import os
+from subprocess import call
 
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import padding
@@ -60,20 +63,30 @@ class Sign(Resource):
 
         # temporary step - get key size
         try:
-            interface = get_repo_interface()
-
             if key_id:
-                uint64_key_id = ctypes.c_uint64(int(key_id))
+                key_id = int(key_id)
             else:
-                uint64_key_id = key_reader.read_prv_key_id(key_path)
-            
-            app.logger.info(f'Converted to uint64 key_id is {uint64_key_id}')
+                key_id = key_reader.read_prv_key_id_int(key_path)
+            app.logger.info(f'Converted to uint64 key_id is {key_id}')
 
-            uint64_key_len = ctypes.c_uint64()
+            msg = {}
+            msg['key_id'] = key_id
+            msg['uid'] = os.getuid()
+            msg['gid'] = os.getgid()
+            io_handler.to_secret_file(msg)
 
-            result = interface.get_key_size(uint64_key_id, ctypes.byref(uint64_key_len))
-            app.logger.info(f'Result of get key size: {result}')
-            app.logger.info(f'Key size is: {uint64_key_len}')
+            app.logger.info(f'Running sudo')
+            cmd = "python3 -m protected_access.get_key_size"
+            call('echo {} | sudo -S {}'.format(system_pass, cmd), shell=True)
+            app.logger.info(f'Runned sudo')
+
+            result_msg = io_handler.from_secret_file()
+            app.logger.info(f'Got result from partition {result_msg}')
+
+            if result_msg['res_result'] is None:
+                raise Exception(result_msg['exception'])
+
+            uint64_key_len = int(result_msg['res_key_size'])
 
         except Exception as e:
             app.logger.error(f'Exception for read key: {e}')
@@ -82,31 +95,30 @@ class Sign(Resource):
                             'qrepo_code': None,
                             'description': 'Cannot get key size'})
 
-        if result != 0:
-            app.logger.error(f'Error in Qrepo: {result}')
-            return jsonify({'function': 'sign',
-                            'qrepo_code': None,
-                            'result': 'failed',
-                            'description': 'Cannot get key size'})
-
         try:
             pass_len = len(password)
             app.logger.info(f'Password key len is: {pass_len} to partition')
-            pass_ptr = ctypes.c_char_p(password.encode())
 
-            prv_key = ctypes.c_char_p(bytes(bytearray(uint64_key_len.value)))
+            msg = {}
+            msg['prv_key'] = '_' * uint64_key_len
+            msg['password'] = password
+            msg['key_id'] = key_id
+            msg['uid'] = os.getuid()
+            msg['gid'] = os.getgid()
+            io_handler.to_secret_file(msg)
 
-            app.logger.info(f'{prv_key.value}')
+            app.logger.info(f'Running sudo read')
+            cmd = "python3 -m protected_access.read_key"
+            call('echo {} | sudo -S {}'.format(system_pass, cmd), shell=True)
+            app.logger.info(f'Runned sudo read')
 
-            app.logger.info(f'prv_key {prv_key}, key_id {uint64_key_id}, pass_ptr {pass_ptr}, pass_len {pass_len}, uint64_key_len {uint64_key_len}')
+            result_msg = io_handler.from_secret_file()
+            app.logger.info(f'Got result from partition read {result_msg}')
 
-            ret = interface.read_key(prv_key, uint64_key_id, pass_ptr, pass_len, uint64_key_len)
-            if ret != 0:
-                app.logger.error(f'Flow finished. Operation NOT successfully completed!')
-                return jsonify({'function': 'sign',
-                                'qrepo_code': ret,
-                                'result': 'failed',
-                                'description': 'Error found'})
+            if result_msg['res_result'] is None:
+                raise Exception(result_msg['exception'])
+
+            str_prv_key = result_msg['res_key']
 
         except Exception as e:
             app.logger.error(f'Unhandled error: {e}')
@@ -115,14 +127,13 @@ class Sign(Resource):
                             'qrepo_code': None,
                             'description': 'Internal server error'})
 
-        str_prv_key = str(prv_key.value)
-
         try:
             # create key structure from buffer
             prv_key_wrapper = serialization.load_pem_private_key(
-                prv_key.value,
+                str_prv_key.encode(),
                 password=None
             )
+
         except Exception as e:
             app.logger.error(f'Error when loading cert: {e}')
             return jsonify({'function': 'sign',

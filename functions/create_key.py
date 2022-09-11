@@ -98,6 +98,7 @@ class CreateKey(Resource):
         )
 
         app.logger.info(f'Key is: {prv_key}')
+        app.logger.info(f'Str key is: {prv_key.decode()}')
 
         try:
 

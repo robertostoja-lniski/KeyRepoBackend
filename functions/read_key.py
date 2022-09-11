@@ -121,7 +121,7 @@ class ReadKey(Resource):
             prv_key = result_msg['res_key']
 
             with open(export_key_path, 'w') as fp:
-                fp.write(str(prv_key))
+                fp.write(prv_key)
 
         except FileExistsError as e:
             app.logger.error(f'File already exists: {e}')
