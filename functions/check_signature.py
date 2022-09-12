@@ -43,8 +43,6 @@ class CheckSignature(Resource):
             input_signature = get_from_jwt(jwt_token, 'signature')
             app.logger.info(f'Received signature file path: {input_signature}')
 
-            password = get_from_jwt(jwt_token, 'partition_pass')
-
         except Exception as e:
             app.logger.error(f'Exception found for sign {e}')
             return jsonify({'function': 'sign',
