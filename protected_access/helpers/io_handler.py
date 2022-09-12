@@ -11,7 +11,6 @@ app.logger.setLevel(logging.INFO)
 def to_secret_file(msg):
 
     msg_str = json.dumps(msg)
-    app.logger.info(f'msg is {msg_str}')
 
     key_byte = config_data('secret_call', 'key')
     app.logger.info(f'Key values is {key_byte}')

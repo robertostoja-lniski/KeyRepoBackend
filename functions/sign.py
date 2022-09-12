@@ -113,7 +113,6 @@ class Sign(Resource):
             app.logger.info(f'Runned sudo read')
 
             result_msg = io_handler.from_secret_file()
-            app.logger.info(f'Got result from partition read {result_msg}')
 
             if result_msg['res_result'] is None:
                 raise Exception(result_msg['exception'])
@@ -143,7 +142,6 @@ class Sign(Resource):
 
         try:
             message_val = key_reader.read_buf_file(message)
-            app.logger.info(f'Secret --- now not secret anymore ;) --- message is {message_val}')
             signature = prv_key_wrapper.sign(
                 message_val,
                 padding.PSS(
@@ -162,7 +160,7 @@ class Sign(Resource):
             app.logger.error(f'Unhandled error: {e}')
             return jsonify({'function': 'sign',
                             'result': 'failed',
-                            'qrepo_code': ret,
+                            'qrepo_code': None,
                             'description': 'Error while signing process'})
 
         app.logger.info(f'Flow finished. Operation successfully completed!')
