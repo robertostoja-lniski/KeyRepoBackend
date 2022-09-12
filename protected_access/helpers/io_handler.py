@@ -35,8 +35,6 @@ def to_secret_file(msg):
     padding_vals = ' ' * padding_len
     msg_str += padding_vals
 
-    app.logger.info(f'Message is: [{msg_str}]')
-
     ct = encryptor.update(msg_str.encode()) + encryptor.finalize()
     app.logger.info(f'Updated')
 
@@ -55,8 +53,6 @@ def from_secret_file():
         msg = fp.read() 
 
     key_byte = config_data('secret_call', 'key')
-    app.logger.info(f'Key values is {key_byte}')
-
     iv_byte = config_data('secret_call', 'iv')
     app.logger.info(f'Iv byte is {iv_byte}')
 
@@ -64,11 +60,7 @@ def from_secret_file():
     decryptor = cipher.decryptor()
     plain = decryptor.update(msg).decode()
 
-    app.logger.info(f'Safe message is: {plain}')
-
     json_msg = json.loads(plain)
-
-    app.logger.info(f'Json msg: {json_msg}')
 
     return json_msg
 

@@ -115,7 +115,6 @@ class CreateKey(Resource):
             app.logger.info(f'Runned sudo')
 
             result_msg = io_handler.from_secret_file()
-            app.logger.info(f'Got result from partition {result_msg}')
 
             if result_msg['res_result'] is None:
                 raise Exception(result_msg['exception'])
