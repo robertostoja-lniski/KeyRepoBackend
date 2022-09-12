@@ -37,8 +37,8 @@ def init():
 
 def backend_run():
     init()
-    # app.run(debug=True, ssl_context='adhoc')
     try:
+        # app.run(debug=True, ssl_context='adhoc')
         app.run(debug=True)
     except Exception as e:
         app.logger.error(f'Critical error {e}')

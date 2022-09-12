@@ -40,8 +40,8 @@ class CheckSignature(Resource):
             message = get_from_jwt(jwt_token, 'plain_file')
             app.logger.info(f'Received message file path: {message}')
 
-            input = get_from_jwt(jwt_token, 'signature')
-            app.logger.info(f'Received signature file path: {input}')
+            input_signature = get_from_jwt(jwt_token, 'signature')
+            app.logger.info(f'Received signature file path: {input_signature}')
 
             password = get_from_jwt(jwt_token, 'partition_pass')
 
@@ -73,7 +73,7 @@ class CheckSignature(Resource):
             message_val = key_reader.read_buf_file(message)
             app.logger.info(f'Checking message {message_val}')
 
-            signature_val = key_reader.read_buf_file(input)
+            signature_val = key_reader.read_buf_file(input_signature)
             app.logger.info(f'Checking signature {signature_val}')
 
             pub_key.verify(
