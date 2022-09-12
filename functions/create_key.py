@@ -97,9 +97,6 @@ class CreateKey(Resource):
           format=serialization.PublicFormat.SubjectPublicKeyInfo
         )
 
-        app.logger.info(f'Key is: {prv_key}')
-        app.logger.info(f'Str key is: {prv_key.decode()}')
-
         try:
 
             app.logger.info(f'Writing key of len: {len(prv_key)} to partition')

@@ -25,11 +25,11 @@ class GetKeyNum(Resource):
         try:
             jwt_token = request.args.get('protected_data')
             system_pass = get_from_jwt(jwt_token, 'system_pass')
-        except ValueError:
+        except Exception as e:
+            app.logger.error(f'[GetKeyNum]: exception caught {e}')
             return jsonify({'function': 'get_key_num',
                             'result': 404, 'description': 'wrong params'})
 
-        print(f'System pass is {system_pass}')
         result = -1
         try:
             interface = get_repo_interface()
@@ -43,8 +43,8 @@ class GetKeyNum(Resource):
 
         except Exception as e:
             app.logger.error(f'[GetKeyNum]: exception caught {e}')
-            return jsonify({'function': 'get_key_num'},
-                           {'result': result})
+            return jsonify({'function': 'get_key_num',
+                           'result': result})
 
         return jsonify({'function': 'get_key_num',
                         'key_num': key_num.value,
